@@ -1,12 +1,13 @@
 # EXP 1 A : COMPUTATION OF DFT USING DIRECT AND FFT
 
 # AIM: 
-To Obtain DFT and FFT of a given sequence in SCILAB.
+To Obtain DFT and FFT of a given sequence in SCILAB. 
 
 # APPARATUS REQUIRED: 
 PC installed with SCILAB. 
 
 # PROGRAM: 
+```
 clc;
 clear;
 
@@ -23,7 +24,6 @@ for k = 0:N-1
         X_dft(k+1) = X_dft(k+1) + x(n+1) * exp(-%i * 2 * %pi * k * n / N);
     end
 end
-
 // Frequency axis (normalized)
 f = (0:N-1) / N;
 
@@ -51,11 +51,13 @@ xtitle("Magnitude Spectrum using FFT");
 subplot(2,1,2);
 plot2d3(f, atan(imag(X_fft), real(X_fft))); // atan2 equivalent
 xtitle("Phase Spectrum using FFT");
+```
 
-# OUTPUT(Using Direct DFT): 
-<img width="1012" height="744" alt="image" src="https://github.com/user-attachments/assets/fdcf02a7-9812-4043-b152-32f8da3cf3cb" />
+# OUTPUT(Using Direct DFT):
+<img width="762" height="574" alt="image" src="https://github.com/user-attachments/assets/ae2afdeb-9fce-4235-bacb-919ce4eecf2f" />
+
 # OUTPUT(Using FFT):
-<img width="851" height="734" alt="image" src="https://github.com/user-attachments/assets/9034236f-8d40-42cf-861d-fde98b3ff1c3" />
+<img width="763" height="574" alt="image" src="https://github.com/user-attachments/assets/dd7377b0-6434-4fbf-8b43-b89bf414381e" />
 
 # RESULT: 
-DFT and FFT of a given sequence in SCILAB was obtained.
+DFT and FFT of a given sequence in SCILAB was obtained 
