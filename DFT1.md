@@ -152,23 +152,121 @@ PC installed with SCILAB.
 
 # PROGRAM: 
 ```
-[x, fs] = wavread("C:\\Users\\acer\\Downloads\\waptt.wav");
+# ================================
+#   AUDIO NOISE REMOVAL & SEPARATION
+# ================================
 
-// Remove first 2 seconds
-cut_samples = round(2 * fs);
-y = x(cut_samples+1:$);
+# Step 1: Install packages
+!pip install -q librosa noisereduce soundfile
 
-// Play original
-disp("Playing Original...");
-playsnd(x, fs);
+# Step 2: Upload clean and noise recordings
+from google.colab import files
+print("Upload clean/normal audio (speech/music)")
+uploaded = files.upload()
+clean_file = next(iter(uploaded.keys()))
 
-// Play trimmed audio
-disp("Playing Audio without first 2s...");
-playsnd(y, fs);
+print("Upload noise-only audio (background)")
+uploaded = files.upload()
+noise_file = next(iter(uploaded.keys()))
 
-// Save the trimmed audio
-wavwrite(y, fs, "C:\\Users\\acer\\Downloads\\waptt2_trimmed.wav");
+# Step 3: Load audios
+import librosa, librosa.display
+import numpy as np
+import matplotlib.pyplot as plt
+from IPython.display import Audio, display
+import noisereduce as nr
+
+clean, sr_c = librosa.load(clean_file, sr=None, mono=True)
+noise, sr_n = librosa.load(noise_file, sr=None, mono=True)
+
+# Resample noise if sample rates differ
+if sr_c != sr_n:
+    print(f"Resampling noise from {sr_n} Hz → {sr_c} Hz")
+    noise = librosa.resample(noise, orig_sr=sr_n, target_sr=sr_c)
+    sr_n = sr_c
+
+sr = sr_c
+print(f"Clean audio SR = {sr_c}, Noise audio SR = {sr_n}")
+print(f"Clean length = {len(clean)/sr:.2f} sec, Noise length = {len(noise)/sr:.2f} sec")
+
+# Step 4: Make lengths equal (pad or cut noise)
+if len(noise) < len(clean):
+    reps = int(np.ceil(len(clean)/len(noise)))
+    noise = np.tile(noise, reps)[:len(clean)]
+else:
+    noise = noise[:len(clean)]
+
+# Step 5: Create noisy mixture
+noisy = clean + noise * 0.5        # adjust noise scaling factor
+print("Generated noisy signal.")
+
+# Step 6: Play audio
+print("\n--- Original Clean Audio ---")
+display(Audio(clean, rate=sr))
+
+print("\n--- Noise Sample ---")
+display(Audio(noise, rate=sr))
+
+print("\n--- Noisy (Merged) Audio ---")
+display(Audio(noisy, rate=sr))
+
+# Step 7: Frequency Analysis (FFT Spectra)
+def plot_spectrum(signal, sr, title):
+    n_fft = 2048
+    Y = np.fft.rfft(signal, n=n_fft)
+    freqs = np.fft.rfftfreq(n_fft, 1/sr)
+    magnitude = np.abs(Y)
+
+    plt.figure(figsize=(12,4))
+    plt.semilogy(freqs, magnitude+1e-12)
+    plt.xlim(0, sr/2)
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Magnitude (log)")
+    plt.title(title)
+    plt.grid(True)
+    plt.show()
+
+plot_spectrum(clean, sr, "Spectrum of Clean Audio")
+plot_spectrum(noise, sr, "Spectrum of Noise")
+plot_spectrum(noisy, sr, "Spectrum of Noisy Audio")
+
+# Step 8: Noise Reduction
+reduced = nr.reduce_noise(y=noisy, y_noise=noise, sr=sr)
+
+# Step 9: Extract estimated noise
+estimated_noise = noisy - reduced
+
+print("\n--- Denoised / Cleaned Audio ---")
+display(Audio(reduced, rate=sr))
+
+print("\n--- Extracted Noise Component ---")
+display(Audio(estimated_noise, rate=sr))
+
+# Step 10: Spectrograms
+def plot_spec(signal, sr, title):
+    D = librosa.stft(signal, n_fft=1024, hop_length=512)
+    S_dB = librosa.amplitude_to_db(np.abs(D), ref=np.max)
+
+    plt.figure(figsize=(12,5))
+    librosa.display.specshow(S_dB, sr=sr, hop_length=512,
+                             x_axis="time", y_axis="hz")
+    plt.colorbar(format="%+2.0f dB")
+    plt.title(title)
+    plt.ylim(0, sr/2)
+    plt.show()
+
+plot_spec(noisy, sr, "Spectrogram of Noisy Audio")
+plot_spec(reduced, sr, "Spectrogram of Denoised Audio")
+plot_spec(estimated_noise, sr, "Spectrogram of Extracted Noise")
 ```
+# OUTPUT:
+<img width="1416" height="492" alt="image" src="https://github.com/user-attachments/assets/ed591836-d9cd-4fc0-893d-7fabc8fbaaf1" />
+<img width="1457" height="479" alt="image" src="https://github.com/user-attachments/assets/cd1f808e-3048-41ea-92c1-686f96a8ed84" />
+<img width="1391" height="498" alt="image" src="https://github.com/user-attachments/assets/0158a301-31c9-4dff-9e17-2380a446b02f" />
+<img width="1334" height="589" alt="image" src="https://github.com/user-attachments/assets/12237154-f746-4b8d-8ace-f26fa8ba90ea" />
+<img width="1377" height="595" alt="image" src="https://github.com/user-attachments/assets/be249ef3-771c-4048-bea2-b0cbc0aff3c9" />
+<img width="1243" height="565" alt="image" src="https://github.com/user-attachments/assets/ac34d18b-5360-47d4-a36e-1196adc1b6ec" />
+
 # RESULT: 
   Analysis of audio signal for noise removal was removed.
 
